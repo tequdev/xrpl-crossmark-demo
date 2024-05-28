@@ -1,33 +1,55 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import { useEffect, useState } from 'react'
+import xrplLogo from './assets/xrpl.svg'
+import crossmarkLogo from '/assets/crossmark.png'
 import './App.css'
+import sdk from '@crossmarkio/sdk';
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [address, setAddress] = useState<string>()
+  
+  useEffect(() => {
+    sdk.mount.loop(200).then(() => {
+      setAddress(sdk.methods.getAddress())
+    })
+  },[])
+  
+  const connect = async () => {
+    const signIn = await sdk.methods.signInAndWait();
+    const address = signIn.response.data.address;
+    setAddress(address)
+  }
+  
+  const createTransaction = async () => {
+    const { response } = await sdk.methods.signAndSubmitAndWait({
+      TransactionType: "Payment",
+      Account: address,
+      Destination: 'rQQQrUdN1cLdNmxH4dHfKgmX5P4kf3ZrM',
+      Amount: '1000000' // 1,000,000 drops = 1 XRP
+    })
+    console.log(response.data.resp.result.hash)
+  }
 
   return (
     <>
       <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+        <img src={xrplLogo} className="logo" alt="XRPL logo" />
+        <img  src='crossmark.png' className="logo" alt="Crossmark logo" />
       </div>
-      <h1>Vite + React</h1>
+      <h1>XRPL + Crossmark</h1>
       <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
+        <button onClick={connect}>
+          Connect
         </button>
         <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
+          {address}
         </p>
       </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+      {address && (
+        <button onClick={createTransaction}>
+          Payment
+        </button>
+      )}
+
     </>
   )
 }
